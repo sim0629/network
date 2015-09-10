@@ -13,29 +13,14 @@
 void handler();
 timer_t set_timer(long long);
 
+static void check_arguments(int argc, char **argv);
+static void set_handler_for_timers();
+
 int main (int argc, char **argv) {
 
-    // Check arguments
-    if (argc != 7) {
-        printf("Usage: %s <hostname> <port> [Arguments]\n", argv[0]);
-        printf("\tMandatory Arguments:\n");
-        printf("\t\t-w\t\tsize of the window used at server\n");
-        printf("\t\t-d\t\tACK delay in msec\n");
-        exit(1);
-    }
+    check_arguments(argc, argv);
 
-    // Set Handler for timers
-    struct sigaction sigact;
-    sigemptyset(&sigact.sa_mask);
-    sigaddset(&sigact.sa_mask, SIGALRM);
-    sigact.sa_handler = &handler;
-    sigaction(SIGALRM, &sigact, NULL);
-
-    // Timer example
-    set_timer(1000);
-    set_timer(2000);
-    set_timer(3000);
-    set_timer(4000);
+    set_handler_for_timers();
 
     while(1){}
 
@@ -53,6 +38,24 @@ int main (int argc, char **argv) {
 
     // TODO: Close the socket
     return 0;
+}
+
+static void check_arguments(int argc, char **argv) {
+    if (argc != 7) {
+        printf("Usage: %s <hostname> <port> [Arguments]\n", argv[0]);
+        printf("\tMandatory Arguments:\n");
+        printf("\t\t-w\t\tsize of the window used at server\n");
+        printf("\t\t-d\t\tACK delay in msec\n");
+        exit(1);
+    }
+}
+
+static void set_handler_for_timers() {
+    struct sigaction sigact;
+    sigemptyset(&sigact.sa_mask);
+    sigaddset(&sigact.sa_mask, SIGALRM);
+    sigact.sa_handler = &handler;
+    sigaction(SIGALRM, &sigact, NULL);
 }
 
 /*
