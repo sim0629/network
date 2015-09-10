@@ -14,8 +14,8 @@ void handler();
 timer_t set_timer(long long);
 
 int main (int argc, char **argv) {
-   
-	// Check arguments 
+
+    // Check arguments
     if (argc != 7) {
         printf("Usage: %s <hostname> <port> [Arguments]\n", argv[0]);
         printf("\tMandatory Arguments:\n");
@@ -62,7 +62,7 @@ int main (int argc, char **argv) {
  */
 void handler() {
     printf("Hi\n");
-	// TODO: Send an ACK packet
+    // TODO: Send an ACK packet
 }
 
 /*
@@ -71,10 +71,10 @@ void handler() {
  */
 timer_t set_timer(long long time) {
     struct itimerspec time_spec = {.it_interval = {.tv_sec=0,.tv_nsec=0},
-    				.it_value = {.tv_sec=0,.tv_nsec=0}};
+                    .it_value = {.tv_sec=0,.tv_nsec=0}};
 
-	int sec = time / 1000;
-	long n_sec = (time % 1000) * 1000;
+    int sec = time / 1000;
+    long n_sec = (time % 1000) * 1000;
     time_spec.it_value.tv_sec = sec;
     time_spec.it_value.tv_nsec = n_sec;
 
