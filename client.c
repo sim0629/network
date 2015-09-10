@@ -20,7 +20,7 @@ int main (int argc, char **argv) {
         printf("Usage: %s <hostname> <port> [Arguments]\n", argv[0]);
         printf("\tMandatory Arguments:\n");
         printf("\t\t-w\t\tsize of the window used at server\n");
-        printf("\t\t-d\t\tACK delay in msec");
+        printf("\t\t-d\t\tACK delay in msec\n");
         exit(1);
     }
 
