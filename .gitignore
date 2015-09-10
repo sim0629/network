@@ -1,0 +1,4 @@
+*.o
+/client
+/server
+/data/*.mp4
