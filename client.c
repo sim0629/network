@@ -11,9 +11,6 @@
 
 #define BUFFER_SIZE 1000    // same as packet size
 
-void handler();
-timer_t set_timer(long long);
-
 // Command-line arguments
 static char *hostname;
 static int port;
@@ -22,6 +19,10 @@ static int ack_delay_ms;
 
 static void check_arguments(int argc, char **argv);
 static void parse_arguments(int argc, char **argv);
+
+// ACK timer and handler
+static void handler();
+static timer_t set_timer(long long);
 static void set_handler_for_timers();
 
 int main (int argc, char **argv) {
@@ -88,7 +89,7 @@ static void set_handler_for_timers() {
  * Invoked by a timer.
  * Send ACK to the server
  */
-void handler() {
+static void handler() {
     printf("Hi\n");
     // TODO: Send an ACK packet
 }
@@ -97,7 +98,7 @@ void handler() {
  * set_timer()
  * set timer in msec
  */
-timer_t set_timer(long long time) {
+static timer_t set_timer(long long time) {
     struct itimerspec time_spec = {.it_interval = {.tv_sec=0,.tv_nsec=0},
                     .it_value = {.tv_sec=0,.tv_nsec=0}};
 
