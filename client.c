@@ -64,29 +64,18 @@ int main (int argc, char **argv) {
 }
 
 static void check_arguments(int argc, char **argv) {
-    if (argc != 7) {
-        printf("Usage: %s <hostname> <port> [Arguments]\n", argv[0]);
-        printf("\tMandatory Arguments:\n");
-        printf("\t\t-w\t\tsize of the window used at server\n");
-        printf("\t\t-d\t\tACK delay in msec\n");
+    if (argc != 5) {
+        printf("Usage: %s <hostname> <port> <window size> <ack delay ms>\n", argv[0]);
         exit(1);
     }
 }
 
 static void parse_arguments(int argc, char **argv) {
-    assert(argc == 7);
+    assert(argc == 5);
     hostname = argv[1];
     port = atoi(argv[2]);
-    if(strcmp(argv[3], "-w") == 0 && strcmp(argv[5], "-d") == 0) {
-        window_size = atoi(argv[4]);
-        ack_delay_ms = atoi(argv[6]);
-    }else if(strcmp(argv[3], "-d") == 0 && strcmp(argv[5], "-w") == 0) {
-        ack_delay_ms = atoi(argv[4]);
-        window_size = atoi(argv[6]);
-    }else {
-        fprintf(stderr, "Error: parsing arguments\n");
-        exit(1);
-    }
+    window_size = atoi(argv[3]);
+    ack_delay_ms = atoi(argv[4]);
 }
 
 static void set_handler_for_timers() {
