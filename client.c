@@ -33,6 +33,7 @@ static int sockfd = SOCK_NULL;
 
 static void socket_connect();
 static void socket_finish();
+static void socket_send_int(int n);
 
 int main (int argc, char **argv) {
 
@@ -48,6 +49,9 @@ int main (int argc, char **argv) {
         switch(cmd[0]) {
         case 'C':
             socket_connect();
+            if(sockfd == SOCK_NULL)
+                break;
+            socket_send_int(window_size);
             break;
         case 'R':
             // TODO
@@ -166,4 +170,10 @@ static void socket_finish() {
     assert(sockfd != SOCK_NULL);
     close(sockfd);
     sockfd = SOCK_NULL;
+}
+
+static void socket_send_int(int n) {
+    assert(sockfd != SOCK_NULL);
+    if(write(sockfd, (char *)&n, sizeof(n)) < 0)
+        perror("write to socket");
 }
