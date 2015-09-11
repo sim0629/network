@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <assert.h>
 #include <netdb.h>
+#include <netinet/tcp.h>
 
 #define BUFFER_SIZE 1000    // same as packet size
 
@@ -131,6 +132,7 @@ static timer_t set_timer(long long time) {
 static void socket_connect() {
     struct sockaddr_in addr;
     struct hostent *server;
+    int nodelay = 1;
 
     assert(sockfd == SOCK_NULL);
 
@@ -138,6 +140,11 @@ static void socket_connect() {
     if(sockfd < 0) {
         perror("socket");
         goto nullify;
+    }
+
+    if(setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (char *)&nodelay, sizeof(nodelay)) < 0) {
+        perror("setsockopt(TCP_NODELAY)");
+        goto close;
     }
 
     server = gethostbyname(hostname);
