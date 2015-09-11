@@ -8,6 +8,7 @@
 #include <time.h>
 #include <signal.h>
 #include <assert.h>
+#include <netdb.h>
 
 #define BUFFER_SIZE 1000    // same as packet size
 
@@ -24,6 +25,13 @@ static void parse_arguments(int argc, char **argv);
 static void handler();
 static timer_t set_timer(long long);
 static void set_handler_for_timers();
+
+// Socket
+#define SOCK_NULL 0
+static int sockfd = SOCK_NULL;
+
+static void socket_connect();
+static void socket_finish();
 
 int main (int argc, char **argv) {
 
@@ -114,4 +122,48 @@ static timer_t set_timer(long long time) {
         perror("timer_settime");
 
     return t_id;
+}
+
+static void socket_connect() {
+    struct sockaddr_in addr;
+    struct hostent *server;
+
+    assert(sockfd == SOCK_NULL);
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if(sockfd < 0) {
+        perror("socket");
+        goto nullify;
+    }
+
+    server = gethostbyname(hostname);
+    if(server == NULL) {
+        perror("gethostbyname");
+        goto close;
+    }
+
+    bzero((char *)&addr, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+    bcopy((char *)server->h_addr_list[0],
+          (char *)&addr.sin_addr.s_addr,
+          server->h_length);
+
+    if(connect(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        perror("connect");
+        goto close;
+    }
+
+    return;
+
+close:
+    close(sockfd);
+nullify:
+    sockfd = SOCK_NULL;
+}
+
+static void socket_finish() {
+    assert(sockfd != SOCK_NULL);
+    close(sockfd);
+    sockfd = SOCK_NULL;
 }
