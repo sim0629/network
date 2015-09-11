@@ -40,21 +40,25 @@ int main (int argc, char **argv) {
 
     set_handler_for_timers();
 
-    while(1){}
+    while(1) {
+        char cmd[32];
+        if(fgets(cmd, sizeof(cmd), stdin) == NULL) break;
 
-    // TODO: Create a socket for a client
-    //      connect to a server
-    //      set ACK delay
-    //      set server window size
-    //      specify a file to receive
-    //      finish the connection
+        switch(cmd[0]) {
+        case 'C':
+            socket_connect();
+            break;
+        case 'R':
+            // TODO
+            break;
+        case 'F':
+            socket_finish();
+            break;
+        default:
+            break;
+        }
+    }
 
-    // TODO: Receive a packet from server
-    //      set timer for ACK delay
-    //      send ACK packet back to server (usisng handler())
-    //      You may use "ack_packet"
-
-    // TODO: Close the socket
     return 0;
 }
 
