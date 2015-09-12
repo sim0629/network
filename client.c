@@ -86,6 +86,7 @@ static void command_C() {
     if(sockfd == SOCK_NULL)
         return;
     socket_send_int('W', window_size);
+    printf("Connection established\n");
 }
 
 static void command_R(int file_number) {
@@ -94,10 +95,12 @@ static void command_R(int file_number) {
     socket_send_int('R', file_number);
     packet_count = socket_recv_int();
     number_of_bytes = socket_recv_packets(packet_count);
+    printf("File transfer finished\n");
 }
 
 static void command_F() {
     socket_finish();
+    printf("Connection terminated\n");
 }
 
 static void check_arguments(int argc, char **argv) {
@@ -259,7 +262,7 @@ static int socket_recv_packets(int packet_count) {
     char buf[BUFFER_SIZE];
     int n_total = 0;
     int i;
-    for(i = 0; i < packet_count; i++) {
+    for(i = 1; i <= packet_count; i++) {
         int n = socket_recv_n(buf, sizeof(buf));
         if(n < 0) {
             perror("read from socket in recv_packets");
@@ -267,6 +270,9 @@ static int socket_recv_packets(int packet_count) {
         }
         n_total += n;
         set_timer(ack_delay_ms);
+        if(i % 10 == 0) {
+            printf("%d MB transmitted\n", i / 10);
+        }
     }
     return n_total;
 }
