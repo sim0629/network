@@ -129,8 +129,12 @@ static void set_handler_for_timers() {
  * Send ACK to the server
  */
 static void handler() {
-    printf("Hi\n");
-    // TODO: Send an ACK packet
+    char buf[1];
+    buf[0] = 'A';
+    if(socket_send_n(buf, sizeof(buf)) < 0) {
+        perror("write to socket in handler");
+        exit(1);
+    }
 }
 
 /*
