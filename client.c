@@ -39,7 +39,8 @@ static int sockfd = SOCK_NULL;
 
 static void socket_connect();
 static void socket_finish();
-static void socket_send_int(int n);
+static int socket_send_n(char *buf, int n);
+static void socket_send_int(char c, int n);
 static int socket_recv_n(char *buf, int n);
 static int socket_recv_int();
 static int socket_recv_packets(int packet_count);
@@ -84,13 +85,13 @@ static void command_C() {
     socket_connect();
     if(sockfd == SOCK_NULL)
         return;
-    socket_send_int(window_size);
+    socket_send_int('W', window_size);
 }
 
 static void command_R(int file_number) {
     int packet_count;
     int number_of_bytes;
-    socket_send_int(file_number);
+    socket_send_int('R', file_number);
     packet_count = socket_recv_int();
     number_of_bytes = socket_recv_packets(packet_count);
 }
@@ -204,9 +205,16 @@ static void socket_finish() {
     sockfd = SOCK_NULL;
 }
 
-static void socket_send_int(int n) {
+static int socket_send_n(char *buf, int n) {
     assert(sockfd != SOCK_NULL);
-    if(write(sockfd, (char *)&n, sizeof(n)) < 0) {
+    return write(sockfd, buf, n);
+}
+
+static void socket_send_int(char c, int n) {
+    char buf[sizeof(n) + 1];
+    buf[0] = c;
+    *(int *)(buf + 1) = n;
+    if(socket_send_n(buf, sizeof(buf)) < 0) {
         perror("write to socket in send_int");
         exit(1);
     }
