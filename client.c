@@ -12,9 +12,9 @@
 #include <netinet/tcp.h>
 #include <errno.h>
 
-#define BUFFER_SIZE 1000    // same as packet size
-
-// Command-line arguments
+/*
+ * Command-line arguments
+ */
 static char *hostname;
 static int port;
 static int window_size;
@@ -23,12 +23,17 @@ static int ack_delay_ms;
 static void check_arguments(int argc, char **argv);
 static void parse_arguments(int argc, char **argv);
 
-// ACK timer and handler
+/*
+ * ACK timer and handler
+ */
 static void handler();
 static timer_t set_timer(long long);
 static void set_handler_for_timers();
 
-// Socket
+/*
+ * Socket-related
+ */
+#define BUFFER_SIZE 1000    // same as packet size
 #define SOCK_NULL 0
 static int sockfd = SOCK_NULL;
 
@@ -38,6 +43,13 @@ static void socket_send_int(int n);
 static int socket_recv_n(char *buf, int n);
 static int socket_recv_int();
 static int socket_recv_packets(int packet_count);
+
+/*
+ * Client functionalities
+ */
+static void command_C();
+static void command_R(int file_number);
+static void command_F();
 
 int main (int argc, char **argv) {
 
@@ -50,25 +62,15 @@ int main (int argc, char **argv) {
         char cmd[32];
         if(fgets(cmd, sizeof(cmd), stdin) == NULL) break;
 
-        int file_number;
-        int packet_count;
-        int number_of_bytes;
-
         switch(cmd[0]) {
         case 'C':
-            socket_connect();
-            if(sockfd == SOCK_NULL)
-                break;
-            socket_send_int(window_size);
+            command_C();
             break;
         case 'R':
-            file_number = atoi(cmd + 1);
-            socket_send_int(file_number);
-            packet_count = socket_recv_int();
-            number_of_bytes = socket_recv_packets(packet_count);
+            command_R(atoi(cmd + 1));
             break;
         case 'F':
-            socket_finish();
+            command_F();
             break;
         default:
             break;
@@ -76,6 +78,25 @@ int main (int argc, char **argv) {
     }
 
     return 0;
+}
+
+static void command_C() {
+    socket_connect();
+    if(sockfd == SOCK_NULL)
+        return;
+    socket_send_int(window_size);
+}
+
+static void command_R(int file_number) {
+    int packet_count;
+    int number_of_bytes;
+    socket_send_int(file_number);
+    packet_count = socket_recv_int();
+    number_of_bytes = socket_recv_packets(packet_count);
+}
+
+static void command_F() {
+    socket_finish();
 }
 
 static void check_arguments(int argc, char **argv) {
