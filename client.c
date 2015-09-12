@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <netdb.h>
 #include <netinet/tcp.h>
+#include <errno.h>
 
 #define BUFFER_SIZE 1000    // same as packet size
 
@@ -34,6 +35,9 @@ static int sockfd = SOCK_NULL;
 static void socket_connect();
 static void socket_finish();
 static void socket_send_int(int n);
+static int socket_recv_n(char *buf, int n);
+static int socket_recv_int();
+static int socket_recv_packets(int packet_count);
 
 int main (int argc, char **argv) {
 
@@ -46,6 +50,10 @@ int main (int argc, char **argv) {
         char cmd[32];
         if(fgets(cmd, sizeof(cmd), stdin) == NULL) break;
 
+        int file_number;
+        int packet_count;
+        int number_of_bytes;
+
         switch(cmd[0]) {
         case 'C':
             socket_connect();
@@ -54,7 +62,10 @@ int main (int argc, char **argv) {
             socket_send_int(window_size);
             break;
         case 'R':
-            // TODO
+            file_number = atoi(cmd + 1);
+            socket_send_int(file_number);
+            packet_count = socket_recv_int();
+            number_of_bytes = socket_recv_packets(packet_count);
             break;
         case 'F':
             socket_finish();
@@ -176,4 +187,51 @@ static void socket_send_int(int n) {
     assert(sockfd != SOCK_NULL);
     if(write(sockfd, (char *)&n, sizeof(n)) < 0)
         perror("write to socket");
+}
+
+static int socket_recv_n(char *buf, int n) {
+    int nleft = n;
+    int nread;
+    char *bufp = buf;
+
+    assert(sockfd != SOCK_NULL);
+
+    while(nleft > 0) {
+        if((nread = read(sockfd, bufp, nleft)) < 0) {
+            if(errno == EINTR)
+                nread = 0;
+            else
+                return -1;
+        }else if(nread == 0) {
+            break;
+        }
+        nleft -= nread;
+        bufp += nread;
+    }
+    return (n - nleft);
+}
+
+static int socket_recv_int() {
+    char buf[sizeof(int)];
+    if(socket_recv_n(buf, sizeof(buf)) < 0) {
+        perror("read from socket in recv_int");
+        return -1;
+    }
+    return *(int *)buf;
+}
+
+static int socket_recv_packets(int packet_count) {
+    char buf[BUFFER_SIZE];
+    int n_total = 0;
+    int i;
+    for(i = 0; i < packet_count; i++) {
+        int n = socket_recv_n(buf, sizeof(buf));
+        if(n < 0) {
+            perror("read from socket in recv_packets");
+            return -1;
+        }
+        n_total += n;
+        set_timer(ack_delay_ms);
+    }
+    return n_total;
 }
