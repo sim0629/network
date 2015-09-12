@@ -46,6 +46,13 @@ static int socket_recv_int();
 static int socket_recv_packets(int packet_count);
 
 /*
+ * Time measuring
+ */
+static inline double timespec_to_seconds(struct timespec *ts) {
+    return (double)ts->tv_sec + (double)ts->tv_nsec / 1000000000.0;
+}
+
+/*
  * Client functionalities
  */
 static void command_C();
@@ -92,10 +99,31 @@ static void command_C() {
 static void command_R(int file_number) {
     int packet_count;
     int number_of_bytes;
+
     socket_send_int('R', file_number);
     packet_count = socket_recv_int();
-    number_of_bytes = socket_recv_packets(packet_count);
+
+    struct timespec start;
+    struct timespec end;
+    double elapsed_s;
+    if(clock_gettime(CLOCK_MONOTONIC, &start)) {
+        perror("getting start time");
+        exit(1);
+    }
+
+    /* Stuff to measure */
+    {
+        number_of_bytes = socket_recv_packets(packet_count);
+    }
+
+    if(clock_gettime(CLOCK_MONOTONIC, &end)) {
+        perror("getting end time");
+        exit(1);
+    }
+    elapsed_s = timespec_to_seconds(&end) - timespec_to_seconds(&start);
+
     printf("File transfer finished\n");
+    printf("Throughput: %f bps\n", number_of_bytes * 8.0 / elapsed_s);
 }
 
 static void command_F() {
