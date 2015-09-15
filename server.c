@@ -155,6 +155,8 @@ static void socket_accept() {
         perror("accept");
         connfd = SOCK_NULL;
     }
+
+    // TODO: Set NODELAY option
 }
 
 static int socket_send_n(char *buf, int n) {
