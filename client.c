@@ -51,7 +51,7 @@ static inline double timespec_to_seconds(struct timespec *ts) {
 static void command_C();
 static void command_R(int file_number);
 static void command_F();
-static int sink_n_packets(int n);
+static size_t sink_packets(size_t packet_count);
 
 int main (int argc, char **argv) {
 
@@ -98,15 +98,15 @@ static void command_C() {
 static void command_R(int file_number) {
     char buf[16];
     int n;
-    int packet_count;
-    int number_of_bytes;
+    size_t packet_count;
+    size_t number_of_bytes;
 
     n = make_int_msg(buf, 'R', file_number);
     assert(socket_send_n(sockfd, buf, n) == n);
 
-    n = sizeof(int);
+    n = sizeof(size_t);
     assert(socket_recv_n(sockfd, buf, n) == n);
-    packet_count = *(int *)buf;
+    packet_count = *(size_t *)buf;
 
     struct timespec start;
     struct timespec end;
@@ -117,7 +117,7 @@ static void command_R(int file_number) {
     }
 
     /* Stuff to measure the elapsed time */ {
-        number_of_bytes = sink_n_packets(packet_count);
+        number_of_bytes = sink_packets(packet_count);
     }
 
     if(clock_gettime(CLOCK_MONOTONIC, &end)) {
@@ -203,19 +203,19 @@ static timer_t set_timer(long long time) {
     return t_id;
 }
 
-static int sink_n_packets(int n) {
+static size_t sink_packets(size_t packet_count) {
     const size_t packet_size = 1000;
     char buf[packet_size];
-    int i;
+    size_t i;
 
-    for(i = 1; i <= n; i++) {
+    for(i = 1; i <= packet_count; i++) {
         assert(socket_recv_n(sockfd, buf, packet_size) == (ssize_t)packet_size);
 
         set_timer(ack_delay_ms);
         if(i % 10 == 0) {
-            printf("%d MB transmitted\n", i / 10);
+            printf("%zu MB transmitted\n", i / 10);
         }
     }
 
-    return packet_size * n;
+    return packet_size * packet_count;
 }
