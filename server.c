@@ -103,6 +103,7 @@ static void set_window_size(int window_size) {
 
 static void start_file_transfer(int file_number) {
     char *file_names[] = {
+        "",
         "TransferMe10.mp4",
         "TransferMe20.mp4",
         "TransferMe30.mp4"
