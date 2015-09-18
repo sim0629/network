@@ -1,3 +1,5 @@
+/* 심규민 2009-11744 */
+
 #ifndef __SGM_SOCKET_H
 #define __SGM_SOCKET_H
 

@@ -1,3 +1,5 @@
+/* 심규민 2009-11744 */
+
 #include <assert.h>
 #include <pthread.h>
 #include <sched.h>

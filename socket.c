@@ -1,3 +1,5 @@
+/* 심규민 2009-11744 */
+
 #include "socket.h"
 
 #include <arpa/inet.h>

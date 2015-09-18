@@ -1,3 +1,5 @@
+# 심규민 2009-11744
+
 CC = gcc
 INC = -I.
 FLAGS = -W -Wall -g
