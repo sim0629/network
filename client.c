@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "klist.h"
 #include "socket.h"
@@ -160,6 +161,8 @@ static void command_R(int file_number) {
 
     printf("File transfer finished\n");
     printf("Throughput: %f bps\n", number_of_bytes * 8.0 / elapsed_s);
+
+    sleep(1);
 }
 
 static void command_F() {
