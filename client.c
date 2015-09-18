@@ -244,8 +244,8 @@ static size_t sink_packets(size_t packet_count) {
         assert(socket_recv_n(sockfd, buf, packet_size) == (ssize_t)packet_size);
 
         push_ack();
-        if(i % 10 == 0) {
-            printf("%zu MB transmitted\n", i / 10);
+        if(i % 1000 == 0) {
+            printf("%zu MB transmitted\n", i / 1000);
         }
     }
 
