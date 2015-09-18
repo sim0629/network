@@ -1,9 +1,12 @@
 #include <assert.h>
+#include <pthread.h>
+#include <sched.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
+#include "klist.h"
 #include "socket.h"
 
 /*
@@ -18,11 +21,17 @@ static void check_arguments(int argc, char **argv);
 static void parse_arguments(int argc, char **argv);
 
 /*
- * ACK timer and handler
+ * ACK-handling thread
  */
-static void handler();
-static timer_t set_timer(long long);
-static void set_handler_for_timers();
+static void *ack_handler(void *);
+static pthread_t ack_thread;
+#define TIMESPEC_FREER(x)
+KLIST_INIT(ack, struct timespec, TIMESPEC_FREER);
+klist_t(ack) *ack_queue;
+pthread_mutex_t ack_queue_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static void start_ack_handling(void);
+static void push_ack(void);
 
 /*
  * Socket
@@ -39,10 +48,31 @@ static inline int make_int_msg(char *buf, char prefix, int n) {
 }
 
 /*
- * Time measuring
+ * Timespec-related
  */
 static inline double timespec_to_seconds(struct timespec *ts) {
     return (double)ts->tv_sec + (double)ts->tv_nsec / 1000000000.0;
+}
+
+static inline int timespec_less(struct timespec *lhs, struct timespec *rhs) {
+    if(lhs->tv_sec == rhs->tv_sec)
+        return lhs->tv_nsec < rhs->tv_nsec;
+    return lhs->tv_sec < rhs->tv_sec;
+}
+
+static inline void timespec_diff(struct timespec *larger, struct timespec *smaller, struct timespec *diff) {
+    diff->tv_sec = larger->tv_sec - smaller->tv_sec;
+    diff->tv_nsec = larger->tv_nsec - smaller->tv_nsec;
+    if(diff->tv_nsec < 0) {
+        diff->tv_sec -= 1;
+        diff->tv_nsec += 1000000000;
+    }
+}
+
+static inline void timespec_add_ms(struct timespec *ts, int ms) {
+    ts->tv_nsec += ms * 1000000;
+    ts->tv_sec += ts->tv_nsec / 1000000000;
+    ts->tv_nsec %= 1000000000;
 }
 
 /*
@@ -58,7 +88,7 @@ int main (int argc, char **argv) {
     check_arguments(argc, argv);
     parse_arguments(argc, argv);
 
-    set_handler_for_timers();
+    start_ack_handling();
 
     while(1) {
         char cmd[32];
@@ -150,57 +180,59 @@ static void parse_arguments(int argc, char **argv) {
     ack_delay_ms = atoi(argv[4]);
 }
 
-static void set_handler_for_timers() {
-    struct sigaction sigact;
-    sigemptyset(&sigact.sa_mask);
-    sigaddset(&sigact.sa_mask, SIGALRM);
-    sigact.sa_handler = &handler;
-    sigaction(SIGALRM, &sigact, NULL);
+static void start_ack_handling(void) {
+    ack_queue = kl_init(ack);
+    if(pthread_create(&ack_thread, NULL, ack_handler, (void *)NULL) != 0) {
+        fprintf(stderr, "pthread_create failed\n");
+        exit(1);
+    }
+    if(pthread_detach(ack_thread) != 0) {
+        fprintf(stderr, "pthread_detach failed\n");
+        exit(1);
+    }
 }
 
-/*
- * handler()
- * Invoked by a timer.
- * Send ACK to the server
- */
-static void handler() {
-    char buf[1];
-    buf[0] = 'A';
-    assert(socket_send_n(sockfd, buf, 1) == 1);
-}
+static void *ack_handler(void *param) {
+    struct timespec now;
+    struct timespec when;
+    int empty;
+    char ack[1] = { 'A' };
 
-/*
- * set_timer()
- * set timer in msec
- */
-static timer_t set_timer(long long time) {
-    struct itimerspec time_spec = {
-        .it_interval = {
-            .tv_sec = 0,
-            .tv_nsec = 0,
-        },
-        .it_value = {
-            .tv_sec = 0,
-            .tv_nsec = 0,
+    while(1) {
+        pthread_mutex_lock(&ack_queue_lock);
+        empty = kl_shift(ack, ack_queue, &when);
+        pthread_mutex_unlock(&ack_queue_lock);
+
+        if(empty) {
+            sched_yield();
+            continue;
         }
-    };
 
-    int sec = time / 1000;
-    long n_sec = (time % 1000) * 1000;
-    time_spec.it_value.tv_sec = sec;
-    time_spec.it_value.tv_nsec = n_sec;
+        assert(clock_gettime(CLOCK_MONOTONIC, &now) == 0);
+        if(timespec_less(&now, &when)) {
+            struct timespec diff;
+            timespec_diff(&when, &now, &diff);
+            assert(nanosleep(&diff, NULL) == 0);
+        }
 
-    timer_t t_id;
-    if(timer_create(CLOCK_MONOTONIC, NULL, &t_id)) {
-        perror("timer_create");
-        exit(1);
-    }
-    if(timer_settime(t_id, 0, &time_spec, NULL)) {
-        perror("timer_settime");
-        exit(1);
+        assert(socket_send_n(sockfd, ack, 1) == 1);
     }
 
-    return t_id;
+    return param;
+}
+
+static void push_ack() {
+    struct timespec ts;
+
+    if(clock_gettime(CLOCK_MONOTONIC, &ts) < 0) {
+        perror("getting time in push_ack");
+        exit(1);
+    }
+    timespec_add_ms(&ts, ack_delay_ms);
+
+    pthread_mutex_lock(&ack_queue_lock);
+    *kl_pushp(ack, ack_queue) = ts;
+    pthread_mutex_unlock(&ack_queue_lock);
 }
 
 static size_t sink_packets(size_t packet_count) {
@@ -211,7 +243,7 @@ static size_t sink_packets(size_t packet_count) {
     for(i = 1; i <= packet_count; i++) {
         assert(socket_recv_n(sockfd, buf, packet_size) == (ssize_t)packet_size);
 
-        set_timer(ack_delay_ms);
+        push_ack();
         if(i % 10 == 0) {
             printf("%zu MB transmitted\n", i / 10);
         }

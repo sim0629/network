@@ -6,19 +6,19 @@ TARGETS = server client
 all: $(TARGETS)
 
 server: server.o socket.o
-	$(CC) $^ -o $@ -lrt
+	$(CC) $^ -o $@ -pthread
 
 client: client.o socket.o
-	$(CC) $^ -o $@ -lrt
+	$(CC) $^ -o $@ -pthread
 
 server.o: server.c
-	$(CC) -c $(FLAGS) $(INC) $< -o $@ -lrt
+	$(CC) -c $(FLAGS) $(INC) $< -o $@ -pthread
 
 client.o: client.c
-	$(CC) -c $(FLAGS) $(INC) $< -o $@ -lrt
+	$(CC) -c $(FLAGS) $(INC) $< -o $@ -pthread
 
 socket.o: socket.c
-	$(CC) -c $(FLAGS) $(INC) $< -o $@ -lrt
+	$(CC) -c $(FLAGS) $(INC) $< -o $@ -pthread
 
 .PHONY: clean
 clean:
