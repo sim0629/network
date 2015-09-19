@@ -21,9 +21,9 @@ by 심규민 2009-11744
 
 다음 경로에 파일이 있어야 함.
 
-* `/data/TransferMe10.mp4`
-* `/data/TransferMe20.mp4`
-* `/data/TransferMe30.mp4`
+* `/data/TransferMe1.mp4`
+* `/data/TransferMe2.mp4`
+* `/data/TransferMe3.mp4`
 
 ## License
 

@@ -106,9 +106,9 @@ static void set_window_size(int window_size) {
 static void start_file_transfer(int file_number) {
     char *file_names[] = {
         "",
-        "TransferMe10.mp4",
-        "TransferMe20.mp4",
-        "TransferMe30.mp4"
+        "TransferMe1.mp4",
+        "TransferMe2.mp4",
+        "TransferMe3.mp4"
     };
 
     assert(file_number >= 0 && (unsigned)file_number < sizeof(file_names) / sizeof(char *));
