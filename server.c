@@ -53,14 +53,12 @@ int main (int argc, char **argv) {
     listenfd = socket_listen(port);
     assert(listenfd >= 0);
 
-    while(1) {
-        connfd = socket_accept(listenfd);
-        assert(connfd >= 0);
+    connfd = socket_accept(listenfd);
+    assert(connfd >= 0);
 
-        process_commands();
+    process_commands();
 
-        assert(socket_close(connfd) == 0);
-    }
+    assert(socket_close(connfd) == 0);
 
     assert(socket_close(listenfd) == 0);
 
